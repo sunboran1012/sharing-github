@@ -1,0 +1,116 @@
+#Mingjiao Sun
+#msun32
+
+#Q9.2: autocorrelation function C_E_L(t)
+import random
+import matplotlib.pyplot as plt
+
+
+
+#numerator sum
+def top_sum(t, n, E_L_list):
+  top_sum = 0
+  for i in range(0, n-t):
+    top_sum = top_sum + (E_L_list[i] - mean) * (E_L_list[i+t] - mean)
+  return top_sum
+
+
+#denominator sum
+def bottom_sum(n, E_L_list):
+  bottom_sum = 0
+  for i in range(0, n):
+    bottom_sum = bottom_sum + (E_L_list[i] - mean) ** 2
+  return bottom_sum
+
+
+
+
+
+#Set n = 1000
+
+#calc <Y> i.e. <E(L)>
+sum = 0
+for n in range(1000):
+  sum = sum + N1000_E_L_list[n]
+
+mean = sum / 1000
+
+
+#create a list of values of autocorrelation function with a length of range of t (i.e. tau)
+C_list = []
+
+for t in range(100):
+  C_value = top_sum(t, 1000, N1000_E_L_list) / bottom_sum(1000, N1000_E_L_list)
+  C_list.append(C_value)
+
+
+
+plt.plot(C_list)
+plt.xlabel('Time separation, \u03c4')
+plt.ylabel('Autocorrelation of E(L)')
+plt.show()
+
+
+
+
+
+#For n = 100 and n = 10000, I add comment symbol to the code, since I defined some variables with the same name
+#Please delete the comment symbol at the front of every syntax to run the code partially!
+
+
+
+#Set n = 100
+
+#calc <Y> i.e. <E(L)>
+#sum = 0
+#for n in range(100):
+  #sum = sum + N100_E_L_list[n]
+
+#mean = sum / 100
+
+
+#create a list of values of autocorrelation function with a length of range of t (i.e. tau)
+#C_list_100 = []
+
+#for t in range(100):
+  #C_value = top_sum(t, 100, N100_E_L_list) / bottom_sum(100, #N100_E_L_list)
+  #C_list_100.append(C_value)
+
+
+#plt.plot(C_list_100)
+#plt.xlabel('Time separation, \u03c4')
+#plt.ylabel('Autocorrelation of E(L)')
+#plt.show()
+
+
+
+
+
+
+#Set n = 10000
+
+#calc <Y> i.e. <E(L)>
+#sum = 0
+#for n in range(10000):
+  #sum = sum + N10000_E_L_list[n]
+
+#mean = sum / 10000
+
+
+#create a list of values of autocorrelation function with a length of range of t (i.e. tau)
+#C_list_10000 = []
+
+#for t in range(10000):
+  #C_value = top_sum(t, 10000, N10000_E_L_list) / bottom_sum(10000, N10000_E_L_list)
+  #C_list_10000.append(C_value)
+
+
+#plt.plot(C_list_10000)
+#plt.xlabel('Time separation, \u03c4')
+#plt.ylabel('Autocorrelation of E(L)')
+#plt.show()
+
+
+#By comparing the 3 autocorrelation graphs as n = 100, n = 1000 and n = 10000, we could observe that starting from tau approximately = 100, C_E(L)(tau) starts to fluctuate around 0.
+#Therefore, it takes about around 100 time steps for the autocorrelation of E(L) to be about 0.
+#(also refer to textbook P306, 50-100 time steps to lose correlation)

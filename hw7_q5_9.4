@@ -1,0 +1,368 @@
+#Mingjiao Sun
+#msun32
+
+#Q9.4: establish histogram of E(L) via the heat flow model (Fig 4.17)
+
+#Run in Jupyter Notebook
+from matplotlib import pyplot as plt
+from scipy.stats import norm
+import numpy as np
+import random
+%matplotlib inline
+
+#create a list of E(L) and a list of W(E(L))
+E_L_heat_list = [4,5,6,7,8,9,10]
+W_E_L_list = [44, 160, 310, 400, 310, 160, 44]
+tot_E_L_list = []
+
+for i in range(44):
+    tot_E_L_list.append(4)
+    tot_E_L_list.append(10)
+
+for i in range(160):
+    tot_E_L_list.append(5)
+    tot_E_L_list.append(9)
+
+for i in range(310):
+    tot_E_L_list.append(6)
+    tot_E_L_list.append(8)
+
+for i in range(400):
+    tot_E_L_list.append(7)
+
+#print(tot_E_L_list)
+
+#show the histogram before normalization
+plt.hist(tot_E_L_list)
+plt.show()
+
+#Sample Standard Deviation and Mean
+std_heat = np.std(tot_E_L_list, ddof=1)
+mean_heat = np.mean(tot_E_L_list)
+
+#Plotting
+domain = np.linspace(np.min(tot_E_L_list), np.max(tot_E_L_list))
+plt.plot(domain, norm.pdf(domain,mean_heat,std_heat),
+         label='$\mathcal{N}$ ' + f'$( \mu \\approx {round(mean_heat)} , \sigma \\approx {round(std_heat)})$')
+plt.hist(tot_E_L_list, edgecolor='black', alpha=.5, density=True)
+
+plt.title('Histogram of E(L) by the microcanonical partition model')
+plt.xlabel('E(L)')
+plt.ylabel('Probability')
+plt.legend()
+plt.show()
+
+#Ref: https://www.youtube.com/watch?v=2nMQnjQvMv0
+
+#normalize histogram of E(L) from q9.3, at n = 100, 1000 and 10000
+
+
+#Set E(L) = E(R) = 7
+#i.e. L: {2,1,1,0}, R: {2,1,1,0} as initial states for L and R sides.
+#Transform the same states into the E level (or position, ranging from 1 to 4) of each particle (4 on L and 4 on R) as:
+#[1,1,2,3,1,1,2,3]
+ini_pos = [1, 1, 2, 3, 1, 1, 2, 3]
+
+#Step 1:
+#create a random pair selection array [i, j], where i, j are the corresponding index of the particle:
+def select_pair_index():
+  i = random.randint(0, 7)
+  j = random.randint(0, 7)
+  if j == i:
+    while j == i:
+      j = random.randint(0, 7)
+  index_pair = [i, j]
+  return index_pair
+
+#test running: print(select_pair_index())
+
+
+#Step 2:
+#update position change of the 2 selected particles at each time step
+def new_pos(index_pair, state_pos):
+  i = index_pair[0]
+  j = index_pair[1]
+  pos_p_1 = state_pos[i]
+  pos_p_2 = state_pos[j]
+  # if 2 particles both at E level 4 or both at 1, no change
+  if (pos_p_1 == 4 and pos_p_2 == 4) or (pos_p_1 == 1 and pos_p_2 == 1):
+    new_pos_p_1 = pos_p_1
+    new_pos_p_2 = pos_p_2
+
+  # the following 4 cases represent only 1 particle at level 4 or 1
+  elif pos_p_1 == 4:
+    new_pos_p_1 = 3
+    new_pos_p_2 = pos_p_2 + 1
+
+  elif pos_p_1 == 1:
+    new_pos_p_1 = 2
+    new_pos_p_2 = pos_p_2 - 1
+
+  elif pos_p_2 == 4:
+    new_pos_p_2 = 3
+    new_pos_p_1 = pos_p_1 + 1
+
+  elif pos_p_2 == 1:
+    new_pos_p_2 = 2
+    new_pos_p_1 = pos_p_1 - 1
+
+  #if neither of the 2 particle are at extreme level, they can change position in +1 or -1 while keeping Etot constant at 14
+  else:
+    rand_num = random.randint(0, 1)
+    if rand_num == 1:
+      rand_move = 1
+    else:
+      rand_move = -1
+
+    new_pos_p_1 = pos_p_1 + rand_move
+    new_pos_p_2 = pos_p_2 - rand_move
+
+  #create a new array new_pos for the updated state_pos
+  new_pos = []
+  num_pos = 0
+
+  for p in state_pos:
+    if num_pos == i:
+      p = new_pos_p_1
+    elif num_pos == j:
+      p = new_pos_p_2
+
+    new_pos.append(p)
+    num_pos += 1
+
+  return new_pos
+
+
+#test
+# A = select_pair_index()
+# print(A)
+# print(new_pos(A, ini_pos))
+
+
+
+
+#Step 3:
+#fn to calculate E(L) and E(R)
+def E_calc(state_pos):
+  E_L = state_pos[0] + state_pos[1] + state_pos[2] + state_pos[3]
+  E_R = state_pos[4] + state_pos[5] + state_pos[6] + state_pos[7]
+  E_combo = [E_L, E_R]
+
+  return E_combo
+
+#test
+#print(E_calc(ini_pos)): [7,7]
+#print(E_calc([1, 1, 2, 2, 2, 1, 2, 3])): [6,8]
+
+#Step 4:
+#fn to calculate E(L) - E(R)
+def E_diff(E_combo):
+  return E_combo[0] - E_combo[1]
+
+#test
+#print(E_diff(E_calc(ini_pos))): 0
+#print(E_diff(E_calc([1, 1, 2, 2, 2, 1, 2, 3]))): -2
+
+
+#Step 5:
+#fn to append new E value to existing list of E values (can be used for E(L), E(R) and E(L) - E(R))
+def new_E_L_list(E_ini, E_add):
+  E_L_new = []
+
+  for e in E_ini:
+    E_L_new.append(e)
+
+  E_L_new.append(E_add[0])
+
+  return E_L_new
+
+
+def new_E_R_list(E_ini, E_add):
+  E_R_new = []
+
+  for e in E_ini:
+    E_R_new.append(e)
+
+  E_R_new.append(E_add[1])
+
+  return E_R_new
+
+
+def new_E_diff_list(E_ini, E_add):
+  E_add_diff = E_add[0] - E_add[1]
+
+  E_diff_new = []
+
+  for e in E_ini:
+    E_diff_new.append(e)
+
+  E_diff_new.append(E_add_diff)
+
+  return E_diff_new
+
+#main program:
+
+#Step 1:
+#add initial and 1st time step position to pos_list, E_L_list, E_R_list and E_diff_list (b/c different syntax in the for loop below)
+
+pair_index = select_pair_index()
+pos_update = new_pos(pair_index, ini_pos)
+
+
+pos_list = []
+pos_list.append(ini_pos)
+pos_list.append(pos_update)
+
+
+E_L_list = [7]
+E_L_list = new_E_L_list(E_L_list, E_calc(pos_update))
+
+
+E_R_list = [7]
+E_R_list = new_E_R_list(E_R_list, E_calc(pos_update))
+
+E_diff_list = [0]
+E_diff_list = new_E_diff_list(E_diff_list, E_calc(pos_update))
+
+
+#Step 2:
+#create a for loop to operate E change from the 2nd to n time steps
+#that will return pos_list, E_L_list, E_R_list, E_diff_list combined as a matrix
+
+def n_steps_operator(pos_update, n, pos_list, E_L_list, E_R_list, E_diff_list):
+
+  for t in range(2, n):
+
+    pair_index = select_pair_index()
+    pos_update = new_pos(pair_index, pos_update)
+
+    pos_list.append(pos_update)
+
+    E_L_list = new_E_L_list(E_L_list, E_calc(pos_update))
+    E_R_list = new_E_R_list(E_R_list, E_calc(pos_update))
+    E_diff_list = new_E_diff_list(E_diff_list, E_calc(pos_update))
+
+  return pos_list, E_L_list, E_R_list, E_diff_list
+
+#Step 3:
+#model simulation for n = 100, 1000 and 10000
+
+#n = 100
+N100 = n_steps_operator(pos_update, 100, pos_list, E_L_list, E_R_list, E_diff_list)
+
+N100_pos_list = N100[0]
+N100_E_L_list = N100[1]
+N100_E_R_list = N100[2]
+N100_E_diff_list = N100[3]
+
+N100_T_list = []
+for n in range(101):
+  N100_T_list.append(n)
+
+
+#n = 1000
+N1000 = n_steps_operator(pos_update, 1000, pos_list, E_L_list, E_R_list, E_diff_list)
+
+N1000_pos_list = N1000[0]
+N1000_E_L_list = N1000[1]
+N1000_E_R_list = N1000[2]
+N1000_E_diff_list = N1000[3]
+
+N1000_T_list = []
+for n in range(1001):
+  N1000_T_list.append(n)
+
+
+#n = 10000
+N10000 = n_steps_operator(pos_update, 10000, pos_list, E_L_list, E_R_list, E_diff_list)
+
+N10000_pos_list = N10000[0]
+N10000_E_L_list = N10000[1]
+N10000_E_R_list = N10000[2]
+N10000_E_diff_list = N10000[3]
+
+N10000_T_list = []
+for n in range(10001):
+  N10000_T_list.append(n)
+
+
+
+#Normalize histogram of E(L) at n = 100
+#Visualize the histogram before normalization
+plt.hist(N100_E_L_list)
+plt.show()
+
+#Sample Standard Deviation and Mean
+std_N100 = np.std(N100_E_L_list, ddof=1)
+mean_N100 = np.mean(N100_E_L_list)
+
+
+#Plotting
+domain = np.linspace(np.min(N100_E_L_list), np.max(N100_E_L_list))
+plt.plot(domain, norm.pdf(domain,mean_N100,std_N100),
+         label='$\mathcal{N}$ ' + f'$( \mu \\approx {round(mean_N100)} , \sigma \\approx {round(std_N100)})$')
+plt.hist(N100_E_L_list, edgecolor='black', alpha=.5, density=True)
+
+
+plt.title('Histogram of E(L) for 100 time steps')
+plt.xlabel('E(L)')
+plt.ylabel('Probability')
+plt.legend()
+plt.show()
+
+
+
+
+
+#Normalize histogram of E(L) at n = 1000
+#Visualize the histogram before normalization
+plt.hist(N1000_E_L_list)
+plt.show()
+
+#Sample Standard Deviation and Mean
+std_N1000 = np.std(N1000_E_L_list, ddof=1)
+mean_N1000 = np.mean(N1000_E_L_list)
+
+
+#Plotting
+domain = np.linspace(np.min(N1000_E_L_list), np.max(N1000_E_L_list))
+plt.plot(domain, norm.pdf(domain,mean_N1000,std_N1000),
+         label='$\mathcal{N}$ ' + f'$( \mu \\approx {round(mean_N1000)} , \sigma \\approx {round(std_N1000)})$')
+plt.hist(N1000_E_L_list, edgecolor='black', alpha=.5, density=True)
+
+
+plt.title('Histogram of E(L) for 1000 time steps')
+plt.xlabel('E(L)')
+plt.ylabel('Probability')
+plt.legend()
+plt.show()
+
+
+
+
+
+#Normalize histogram of E(L) at n = 10000
+#Visualize the histogram before normalization
+plt.hist(N10000_E_L_list)
+plt.show()
+
+#Sample Standard Deviation and Mean
+std_N10000 = np.std(N10000_E_L_list, ddof=1)
+mean_N10000 = np.mean(N10000_E_L_list)
+
+
+#Plotting
+domain = np.linspace(np.min(N10000_E_L_list), np.max(N10000_E_L_list))
+plt.plot(domain, norm.pdf(domain,mean_N10000,std_N10000),
+         label='$\mathcal{N}$ ' + f'$( \mu \\approx {round(mean_N10000)} , \sigma \\approx {round(std_N10000)})$')
+plt.hist(N10000_E_L_list, edgecolor='black', alpha=.5, density=True)
+
+
+plt.title('Histogram of E(L) for 10000 time steps')
+plt.xlabel('E(L)')
+plt.ylabel('Probability')
+plt.legend()
+plt.show()
+
+##We can easily observe that all 4 graphs have the same mean = 7
+#and sd = 1, meaning that the normal distribution of them are of similar shapes.
